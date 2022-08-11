@@ -597,6 +597,10 @@ public class EventGroupTest extends ThreadsTestCommon {
         @Override
         public void loopFinished() {
             assertTrue(loopFinishedNS.compareAndSet(0, System.nanoTime()), "loopFinished called once only " + this);
+            // Uncomment the following line to watch the fireworks https://github.com/OpenHFT/Chronicle-Threads/issues/160
+//            assertTrue(EventLoop.inEventLoop(), "loopFinished should be called on EL thread (called on `"
+//                    + Thread.currentThread().getName()
+//                    + "`, priority=" + priority + " )");
             Jvm.busyWaitMicros(1);
         }
 
