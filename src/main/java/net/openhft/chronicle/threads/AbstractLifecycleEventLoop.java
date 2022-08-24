@@ -48,6 +48,11 @@ public abstract class AbstractLifecycleEventLoop extends AbstractCloseable imple
 
     private final Pauser pauser;
 
+    @Deprecated(/* to remove in x.24 */)
+    protected AbstractLifecycleEventLoop(String name) {
+        this(name, Pauser.balanced());
+    }
+
     protected AbstractLifecycleEventLoop(@NotNull String name, Pauser pauser) {
         this.name = name;
         this.pauser = pauser;

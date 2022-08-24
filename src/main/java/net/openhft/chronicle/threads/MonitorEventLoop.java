@@ -56,6 +56,12 @@ public class MonitorEventLoop extends AbstractLifecycleEventLoop implements Runn
         service.submit(this);
     }
 
+    @Deprecated(/* to remove in x.24 */)
+    @Override
+    public void unpause() {
+        super.unpause();
+    }
+
     @Override
     protected void performStopFromNew() {
         performStop();
