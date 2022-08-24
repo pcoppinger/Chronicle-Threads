@@ -267,8 +267,10 @@ public class EventGroupTest extends ThreadsTestCommon {
                 eventGroup.addHandler(new EventGroupTest.TestHandler(hp));
             for (TestHandler handler : this.handlers)
                 handler.assertStarted();
+            List<EventLoop> eventLoops = new ArrayList<>();
+            EventLoops.copyEventLoopsTo(eventLoops);
             final String names =
-                    EventLoops.eventLoops().stream()
+                    eventLoops.stream()
                             .collect(Collectors.groupingBy(EventLoop::name, TreeMap::new,
                                     Collectors.reducing(null, (EventLoop l) -> EventLoops.pauserFor(l).getClass(), (a, b) -> b)))
                             .entrySet().stream()

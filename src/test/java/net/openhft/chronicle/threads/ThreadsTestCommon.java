@@ -30,7 +30,9 @@ import net.openhft.chronicle.core.time.SystemTimeProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -138,7 +140,10 @@ public class ThreadsTestCommon {
     }
 
     private void checkEventLoops() {
-        for (EventLoop eventLoop : EventLoops.eventLoops()) {
+        List<EventLoop> eventLoops = new ArrayList<>();
+        EventLoops.copyEventLoopsTo(eventLoops);
+
+        for (EventLoop eventLoop : eventLoops) {
             if (!eventLoop.isStopped()) {
                 final String message = eventLoop.toString();
                 eventLoop.close();

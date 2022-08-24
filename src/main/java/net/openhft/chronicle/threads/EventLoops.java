@@ -21,6 +21,8 @@ package net.openhft.chronicle.threads;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.threads.EventLoop;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -28,27 +30,39 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
 public final class EventLoops {
-    static final boolean TRACE_EVENT_LOOPS= Jvm.getBoolean("trace.eventLoops");
-    static final Set<EventLoop> EVENT_LOOPS = TRACE_EVENT_LOOPS
-            ? Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()))
-            : Collections.emptySet();
+    static final boolean TRACE_EVENT_LOOPS = Jvm.getBoolean("trace.eventLoops");
+    static final List<Reference<EventLoop>> EVENT_LOOPS = TRACE_EVENT_LOOPS
+            ? Collections.synchronizedList(new ArrayList<>())
+            : Collections.emptyList();
 
     // Suppresses default constructor, ensuring non-instantiability.
     private EventLoops() {
     }
 
     public static void addEventLoop(EventLoop eventLoop) {
-        if (TRACE_EVENT_LOOPS)
-            EVENT_LOOPS.add(eventLoop);
+        if (TRACE_EVENT_LOOPS) {
+            EVENT_LOOPS.removeIf(r -> r.get() == null);
+            EVENT_LOOPS.add(new WeakReference<>(eventLoop));
+        }
     }
 
     public static void removeEventLoop(EventLoop eventLoop) {
-        if (TRACE_EVENT_LOOPS)
-            EVENT_LOOPS.remove(eventLoop);
+        if (TRACE_EVENT_LOOPS) {
+            EVENT_LOOPS.removeIf(r -> r.get() == null || r.get() == eventLoop);
+        }
     }
 
-    public static Set<EventLoop> eventLoops() {
-        return EVENT_LOOPS;
+    public static void copyEventLoopsTo(List<EventLoop> eventLoopList) {
+        eventLoopList.clear();
+        EVENT_LOOPS.removeIf(r -> r.get() == null);
+        synchronized (EVENT_LOOPS) {
+            for (int i = 0; i < EVENT_LOOPS.size(); i++) {
+                Reference<EventLoop> ref = EVENT_LOOPS.get(i);
+                EventLoop eventLoop = ref.get();
+                if (eventLoop != null)
+                    eventLoopList.add(eventLoop);
+            }
+        }
     }
 
     /**
