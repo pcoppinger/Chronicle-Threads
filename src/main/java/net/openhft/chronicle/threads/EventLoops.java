@@ -21,19 +21,34 @@ package net.openhft.chronicle.threads;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.threads.EventLoop;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
 public final class EventLoops {
+    static final boolean TRACE_EVENT_LOOPS= Jvm.getBoolean("trace.eventLoops");
+    static final Set<EventLoop> EVENT_LOOPS = TRACE_EVENT_LOOPS
+            ? Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()))
+            : Collections.emptySet();
 
     // Suppresses default constructor, ensuring non-instantiability.
     private EventLoops() {
+    }
+
+    public static void addEventLoop(EventLoop eventLoop) {
+        if (TRACE_EVENT_LOOPS)
+            EVENT_LOOPS.add(eventLoop);
+    }
+
+    public static void removeEventLoop(EventLoop eventLoop) {
+        if (TRACE_EVENT_LOOPS)
+            EVENT_LOOPS.remove(eventLoop);
+    }
+
+    public static Set<EventLoop> eventLoops() {
+        return EVENT_LOOPS;
     }
 
     /**
@@ -74,5 +89,13 @@ public final class EventLoops {
                 Jvm.warn().on(EventLoops.class, "Unexpected object passed to EventLoops.stop(): " + o);
             }
         }
+    }
+
+    public static Pauser pauserFor(EventLoop loop) {
+        if (loop instanceof AbstractLifecycleEventLoop) {
+            AbstractLifecycleEventLoop alel = (AbstractLifecycleEventLoop) loop;
+            return alel.pauser();
+        }
+        return Pauser.busy();
     }
 }

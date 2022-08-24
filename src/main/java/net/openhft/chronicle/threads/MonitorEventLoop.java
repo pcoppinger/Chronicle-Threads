@@ -39,16 +39,14 @@ public class MonitorEventLoop extends AbstractLifecycleEventLoop implements Runn
     private transient final ExecutorService service;
     private transient final EventLoop parent;
     private final List<EventHandler> handlers = new CopyOnWriteArrayList<>();
-    private final Pauser pauser;
 
     public MonitorEventLoop(final EventLoop parent, final Pauser pauser) {
         this(parent, "", pauser);
     }
 
     public MonitorEventLoop(final EventLoop parent, final String name, final Pauser pauser) {
-        super(name + (parent == null ? "" : parent.name()) + "/event~loop~monitor");
+        super((parent == null ? name : parent.name()) + "/event~loop~monitor", pauser);
         this.parent = parent;
-        this.pauser = pauser;
         service = Executors.newSingleThreadExecutor(
                 new NamedThreadFactory(name, true, null, true));
     }
@@ -56,11 +54,6 @@ public class MonitorEventLoop extends AbstractLifecycleEventLoop implements Runn
     @Override
     protected void performStart() {
         service.submit(this);
-    }
-
-    @Override
-    public void unpause() {
-        pauser.unpause();
     }
 
     @Override
@@ -106,6 +99,7 @@ public class MonitorEventLoop extends AbstractLifecycleEventLoop implements Runn
         try {
             // don't do any monitoring for the first MONITOR_INITIAL_DELAY_MS ms
             final long waitUntilMs = System.currentTimeMillis() + MONITOR_INITIAL_DELAY_MS;
+            final Pauser pauser = pauser();
             while (System.currentTimeMillis() < waitUntilMs && isStarted())
                 pauser.pause();
             pauser.reset();
@@ -231,7 +225,7 @@ public class MonitorEventLoop extends AbstractLifecycleEventLoop implements Runn
                 "service=" + service +
                 ", parent=" + parent +
                 ", handlers=" + handlers +
-                ", pauser=" + pauser +
+                ", pauser=" + pauser() +
                 ", name='" + name + '\'' +
                 '}';
     }
